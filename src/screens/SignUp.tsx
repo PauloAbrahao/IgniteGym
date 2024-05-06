@@ -7,17 +7,44 @@ import {Input} from "@components/Input";
 import {Button} from "@components/Button";
 import {useNavigation} from "@react-navigation/native";
 import {useForm, Controller} from "react-hook-form";
+import { yupResolver } from "@hookform/resolvers/yup";
+import {signUpSchema} from "@helpers/formsSchema/signupSchema"
+
+type FormDataProps = {
+  name: string;
+  email: string;
+  password: string;
+  password_confirm: string;
+};
 
 export function SignUp() {
-  const {control, handleSubmit} = useForm();
+  const {
+    control,
+    handleSubmit,
+    formState: {errors},
+  } = useForm<FormDataProps>({
+    defaultValues: {
+      name: "",
+      email: "",
+      password: "",
+      password_confirm: "",
+    },
+    resolver: yupResolver(signUpSchema),
+  });
+
   const navigation = useNavigation();
 
   function handleGoBack() {
     navigation.goBack();
   }
 
-  function handleSignUp(data: any) {
-    console.log({ data })
+  function handleSignUp({
+    name,
+    email,
+    password,
+    password_confirm,
+  }: FormDataProps) {
+    console.log({name, email, password, password_confirm});
   }
 
   return (
@@ -51,7 +78,12 @@ export function SignUp() {
             control={control}
             name="name"
             render={({field: {onChange, value}}) => (
-              <Input placeholder="Nome" onChangeText={onChange} value={value} />
+              <Input
+                placeholder="Nome"
+                onChangeText={onChange}
+                value={value}
+                errorMessage={errors.name?.message}
+              />
             )}
           />
 
@@ -65,6 +97,7 @@ export function SignUp() {
                 autoCapitalize="none"
                 onChangeText={onChange}
                 value={value}
+                errorMessage={errors.email?.message}
               />
             )}
           />
@@ -78,6 +111,7 @@ export function SignUp() {
                 secureTextEntry
                 onChangeText={onChange}
                 value={value}
+                errorMessage={errors.password?.message}
               />
             )}
           />
@@ -93,11 +127,15 @@ export function SignUp() {
                 value={value}
                 onSubmitEditing={handleSubmit(handleSignUp)}
                 returnKeyType="send"
+                errorMessage={errors.password_confirm?.message}
               />
             )}
           />
 
-          <Button title="Criar e acessar" onPress={handleSubmit(handleSignUp)} />
+          <Button
+            title="Criar e acessar"
+            onPress={handleSubmit(handleSignUp)}
+          />
         </Center>
 
         <Button
