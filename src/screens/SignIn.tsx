@@ -1,4 +1,12 @@
-import {VStack, Image, Text, Center, Heading, ScrollView} from "native-base";
+import {
+  VStack,
+  Image,
+  Text,
+  Center,
+  Heading,
+  ScrollView,
+  useToast,
+} from "native-base";
 import {useNavigation} from "@react-navigation/native";
 
 import LogoSvg from "@assets/logo.svg";
@@ -11,6 +19,9 @@ import {AuthNavigatorRoutesProps} from "@routes/auth.routes";
 import {Controller, useForm} from "react-hook-form";
 import {yupResolver} from "@hookform/resolvers/yup";
 import {signInSchema} from "@helpers/formsSchema/signinSchema";
+import {useAuth} from "@hooks/useAuth";
+import {AppError} from "@utils/AppError";
+import {useState} from "react";
 
 type FormDataProps = {
   email: string;
@@ -18,6 +29,8 @@ type FormDataProps = {
 };
 
 export function SignIn() {
+  const [isLoading, setIsLoading] = useState(false);
+  const toast = useToast();
   const {
     control,
     handleSubmit,
@@ -29,14 +42,31 @@ export function SignIn() {
     },
     resolver: yupResolver(signInSchema),
   });
+  const {signIn} = useAuth();
   const navigation = useNavigation<AuthNavigatorRoutesProps>();
 
   function handleNewAccount() {
     navigation.navigate("signUp");
   }
 
-  function handleSignIn({email, password}: FormDataProps) {
-    console.log({email, password});
+  async function handleSignIn({email, password}: FormDataProps) {
+    try {
+      setIsLoading(true);
+      await signIn(email, password);
+    } catch (error) {
+      const isAppError = error instanceof AppError;
+
+      const title = isAppError
+        ? error.message
+        : "Não foi possível entrar. Tente novamente mais tarde.";
+
+      toast.show({
+        title,
+        placement: "bottom",
+        bgColor: "red.500",
+      });
+      setIsLoading(false);
+    }
   }
 
   return (
@@ -95,7 +125,11 @@ export function SignIn() {
             )}
           />
 
-          <Button title="Acessar" onPress={handleSubmit(handleSignIn)} />
+          <Button
+            title="Acessar"
+            onPress={handleSubmit(handleSignIn)}
+            isLoading={isLoading}
+          />
         </Center>
 
         <Center mt={24} mb={-50}>
