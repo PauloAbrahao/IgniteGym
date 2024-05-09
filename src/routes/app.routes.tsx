@@ -21,7 +21,7 @@ const {Navigator, Screen} = createBottomTabNavigator<AppRoutes>();
 
 type AppRoutes = {
   home: undefined;
-  exercise: undefined;
+  exercise: {exerciseId: string};
   profile: undefined;
   history: undefined;
 };
