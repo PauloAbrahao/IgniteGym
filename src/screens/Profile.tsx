@@ -22,6 +22,8 @@ import {yupResolver} from "@hookform/resolvers/yup";
 import {api} from "@services/api";
 import {AppError} from "@utils/AppError";
 
+import defaulUserPhotoImg from "@assets/userPhotoDefault.png";
+
 type FormDataProps = {
   name: string;
   email?: string;
@@ -35,9 +37,6 @@ const PHOTO_SIZE = 33;
 export function Profile() {
   const [isUpdating, setIsUpdating] = useState(false);
   const [photoIsLoading, setPhotoIsLoading] = useState(false);
-  const [userPhoto, setUserPhoto] = useState(
-    "https://github.com/PauloAbrahao.png"
-  );
 
   const toast = useToast();
   const {user, updateUserProfile} = useAuth();
@@ -80,7 +79,40 @@ export function Profile() {
           });
         }
 
-        setUserPhoto(photoSelected.assets[0].uri);
+        const fileExtension = photoSelected.assets[0].uri.split(".").pop();
+
+        const photoFile = {
+          name: `${user.name}.${fileExtension}`
+            .toLowerCase()
+            .trim()
+            .split(" ")
+            .join("_"),
+          uri: photoSelected.assets[0].uri,
+          type: `${photoSelected.assets[0].type}/${fileExtension}`,
+        } as any;
+
+        const userPhotoUploadForm = new FormData();
+        userPhotoUploadForm.append("avatar", photoFile);
+
+        const avatarUpdatedResponse = await api.patch(
+          "/users/avatar",
+          userPhotoUploadForm,
+          {
+            headers: {
+              "Content-Type": "multipart/form-data",
+            },
+          }
+        );
+
+        const userUpdated = user;
+        userUpdated.avatar = avatarUpdatedResponse.data.avatar;
+        updateUserProfile(userUpdated);
+
+        toast.show({
+          title: "Foto atualizada!",
+          placement: "bottom",
+          bgColor: "green.500",
+        });
       }
     } catch (err) {
     } finally {
@@ -139,7 +171,11 @@ export function Profile() {
             />
           ) : (
             <UserPhoto
-              source={{uri: userPhoto}}
+              source={
+                user.avatar
+                  ? {uri: `${api.defaults.baseURL}/avatar/${user.avatar}`}
+                  : defaulUserPhotoImg
+              }
               size={PHOTO_SIZE}
               alt="Foto do usuário"
             />
